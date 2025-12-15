@@ -39,9 +39,27 @@
 typedef char *sds;
 
 struct sdshdr {
+    // 记录buf数组中已使用字节的长度
+    // 等于SDS所保存的字符串长度
     int len;
+    // 记录buf数组中未使用的字节的长度
     int free;
+    // buf数组的起始地址，用于保存字符串
+    // 此处采用柔性数组，用于表示在结构体后紧跟一块连续的内存，作为数组使用
+    //+---------+--------+-----+-----------------------+
+    //| len(4)  | free(4)| PAD | buf[0] buf[1] ...     |
+    //+---------+--------+-----+-----------------------+
+    // char* buf的格式是指向一块数组的指针
+    //在Redis的SDS（Simple Dynamic String）实现中，使用柔性数组成员的好处：
+    //内存效率：只需要一次内存分配就能同时容纳结构体头和字符串数据
+    //缓存友好：结构体头和数据在内存中是连续的，访问效率更高
+    //简化管理：释放时只需要一次free操作 如果使用 char *buf，则需要两次内存分配
+//    创建一个SDS字符串时，实际分配的内存 见 sds.c/sdsnewlen
+//    // 分配包含结构体和缓冲区的连续内存
+//    struct sdshdr *sh = malloc(sizeof(struct sdshdr) + initial_len + 1);
     char buf[];
+    // 该char数组可用 printf("%s", s->buf) 的形式打印，无需专门写一个打印函数
+
 };
 
 static inline size_t sdslen(const sds s) {
